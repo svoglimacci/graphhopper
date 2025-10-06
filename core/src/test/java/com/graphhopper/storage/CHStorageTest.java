@@ -7,6 +7,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CHStorageTest {
@@ -26,22 +27,28 @@ class CHStorageTest {
     @Test
     void createAndLoad(@TempDir Path path) {
         {
-            GHDirectory dir = new GHDirectory(path.toAbsolutePath().toString(), DAType.RAM_INT_STORE);
+            GHDirectory dir = new GHDirectory(path.toAbsolutePath().toString(),
+                    DAType.RAM_INT_STORE);
             CHStorage chStorage = new CHStorage(dir, "car", -1, false);
             // we have to call create, because we want to create a new storage not load an existing one
             chStorage.create(5, 3);
-            assertEquals(0, chStorage.shortcutNodeBased(0, 1, PrepareEncoder.getScFwdDir(), 10, 3, 5));
-            assertEquals(1, chStorage.shortcutNodeBased(1, 2, PrepareEncoder.getScFwdDir(), 11, 4, 6));
-            assertEquals(2, chStorage.shortcutNodeBased(2, 3, PrepareEncoder.getScFwdDir(), 12, 5, 7));
+            assertEquals(0,
+                    chStorage.shortcutNodeBased(0, 1, PrepareEncoder.getScFwdDir(), 10, 3, 5));
+            assertEquals(1,
+                    chStorage.shortcutNodeBased(1, 2, PrepareEncoder.getScFwdDir(), 11, 4, 6));
+            assertEquals(2,
+                    chStorage.shortcutNodeBased(2, 3, PrepareEncoder.getScFwdDir(), 12, 5, 7));
             // exceeding the number of expected shortcuts is ok, the container will just grow
-            assertEquals(3, chStorage.shortcutNodeBased(3, 4, PrepareEncoder.getScFwdDir(), 13, 6, 8));
+            assertEquals(3,
+                    chStorage.shortcutNodeBased(3, 4, PrepareEncoder.getScFwdDir(), 13, 6, 8));
             assertEquals(5, chStorage.getNodes());
             assertEquals(4, chStorage.getShortcuts());
             chStorage.flush();
             chStorage.close();
         }
         {
-            GHDirectory dir = new GHDirectory(path.toAbsolutePath().toString(), DAType.RAM_INT_STORE);
+            GHDirectory dir = new GHDirectory(path.toAbsolutePath().toString(),
+                    DAType.RAM_INT_STORE);
             CHStorage chStorage = new CHStorage(dir, "car", -1, false);
             // this time we load from disk
             chStorage.loadExisting();
@@ -84,4 +91,21 @@ class CHStorageTest {
         assertTrue(access.getInt(0) < 0);
         assertEquals(Integer.MAX_VALUE, access.getInt(0) >>> 1);
     }
+
+
+    @Test
+    public void testIsClosed() {
+        RAMDirectory dir = new RAMDirectory();
+        CHStorage chStorage = new CHStorage(dir, "test_close", -1, false);
+        chStorage.create(5, 3);
+        assertFalse(chStorage.isClosed(), "CHStorage should not be closed initially");
+
+        chStorage.shortcutNodeBased(0, 1, PrepareEncoder.getScFwdDir(), 10.0, 2, 3);
+        assertFalse(chStorage.isClosed(), "CHStorage should remain open after adding shortcuts");
+
+        chStorage.close();
+        assertTrue(chStorage.isClosed(), "CHStorage should be closed after calling close()");
+    }
+
+
 }

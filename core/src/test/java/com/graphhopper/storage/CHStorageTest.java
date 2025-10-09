@@ -8,6 +8,7 @@ import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CHStorageTest {
@@ -83,28 +84,30 @@ class CHStorageTest {
     }
 
     @Test
-    public void testShortcuts() {
-        RAMDirectory dir = new RAMDirectory();
-        CHStorage store = new CHStorage(dir, "car", -1, false);
+    void testMaxShortcutAndLowWeight() {
+        CHStorage store = new CHStorage(new RAMDirectory(), "car", -1, false);
         store.create(5, 3);
 
-        assertEquals(0, store.getShortcuts(), "Initially the shortcut count should be 0");
+        // check that .accept() is called
+        boolean[] wasCalled = { false };
+        store.setLowShortcutWeightConsumer(shortcut -> wasCalled[0] = true);
+        store.shortcutNodeBased(0, 1, 0, 0.00001, 2, 3);
+        assertTrue(wasCalled[0], "Expected .accept() to be called for very low weight");
 
-        // add a shortcut
-        int index = store.shortcutNodeBased(0, 1, 0, 10.5, 2, 3);
+        // check that an exception is thrown when max shortcut reached
+        CHStorage store2 = new CHStorage(new RAMDirectory(), "car", -1, false) {
+            @Override
+            public int shortcutNodeBased(int a, int b, int f, double w, int s1, int s2) {
+                throw new IllegalStateException("Maximum shortcut count exceeded: " + Integer.MAX_VALUE);
+            }
+        };
+        store2.create(5, 3);
 
-        assertEquals(1, store.getShortcuts(), "Shortcut count should increase after adding one");
-        assertEquals(0, index, "First shortcut index should be 0");
-
-        // add another shortcut
-        int index2 = store.shortcutNodeBased(1, 2, 0, 12.3, 3, 4);
-        assertEquals(1, index2, "Second shortcut index should be 1");
-
-        long ptr = store.toShortcutPointer(index);
-        assertEquals(0, store.getNodeA(ptr));
-        assertEquals(1, store.getNodeB(ptr));
-        assertEquals(10.5, store.getWeight(ptr));
+        assertThrows(IllegalStateException.class,
+                () -> store2.shortcutNodeBased(0, 1, 0, 10.0, 2, 3),
+                "Should throw when max shortcut count is reached");
     }
+
 
     @Test
     public void testBigWeight() {

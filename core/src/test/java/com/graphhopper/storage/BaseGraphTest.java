@@ -127,6 +127,29 @@ public class BaseGraphTest extends AbstractGraphStorageTester {
         assertTrue(graph.isFrozen());
     }
 
+    @Test
+    void testFreezeThrowsExceptions() {
+        RAMDirectory dir = new RAMDirectory();
+        BaseGraph graph = new BaseGraph.Builder(encodingManager)
+                .setDir(dir)
+                .set3D(false)
+                .setSegmentSize(1000)
+                .build();
+
+        // First call to freeze() should succeed
+        graph.freeze();
+        assertTrue(graph.isFrozen(), "Graph should be frozen after first call to freeze()");
+
+        // Second call should throw an exception
+        try {
+            graph.freeze();
+            fail("Expected IllegalStateException on second freeze() call");
+        } catch (IllegalStateException exception) {
+            assertEquals("base graph already frozen", exception.getMessage());
+        }
+    }
+
+
     protected void checkGraph(Graph g) {
         NodeAccess na = g.getNodeAccess();
         assertTrue(na.is3D());

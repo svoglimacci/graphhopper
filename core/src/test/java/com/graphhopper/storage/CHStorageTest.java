@@ -64,6 +64,25 @@ class CHStorageTest {
     }
 
     @Test
+    void testCreateThrowsExceptions() {
+        RAMDirectory dir = new RAMDirectory();
+        CHStorage store = new CHStorage(dir, "", -1, false);
+
+        try {
+            store.create(-1, 5);
+        } catch (IllegalStateException exception) {
+            assertEquals("CHStorage must be created with a positive number of nodes", exception.getMessage());
+        }
+
+        store.create(10, 5);
+        try {
+            store.create(10, 5);
+        } catch (IllegalStateException exception) {
+            assertEquals("CHStorage can only be created once", exception.getMessage());
+        }
+    }
+
+    @Test
     public void testBigWeight() {
         CHStorage g = new CHStorage(new RAMDirectory(), "abc", 1024, false);
         g.shortcutNodeBased(0, 0, 0, 10, 0, 1);

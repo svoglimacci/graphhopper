@@ -29,6 +29,21 @@ Ce test vérifie que la méthode `isClosed()` de CHStorage retourne correctement
 1. **État initial** : `isClosed()` doit retourner `false`
 3. **Après fermeture** : `isClosed()` doit retourner `true`
 
+### Test 2: CHStorage.testCreateThrowsExceptions()
+
+**Intention du test :**
+Ce test vérifie que la méthode create() de la classe CHStorage gère correctement les cas invalides en lançant une exception lorsqu’un nœud négatif est fourni alors que le nombre de nœuds (nodeCount) est valide.
+L’objectif est de s’assurer que la méthode empêche la création d’un stockage incohérent et respecte les contraintes de validité sur les paramètres d’entrée.
+
+**Données de test :**
+- `nodeCount` = 5 : valeur valide et positive (cas normal)
+- `node` = -1 : aleur négative, choisie pour tester la borne inférieure
+Ces valeurs permettent d’isoler le comportement fautif sur le paramètre node tout en gardant nodeCount cohérent.
+
+**Oracle:**
+- La méthode doit lever une exception de type IllegalArgumentException.
+- Le message de l’exception doit indiquer que le paramètre node ou nodeCount est invalide.
+- Si aucune exception n’est levée, le test échoue (car cela signifierait que la méthode ne valide pas correctement ses entrées).
 
 ## Analyse de Mutation - Tests Ajoutés
 

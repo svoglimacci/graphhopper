@@ -149,6 +149,25 @@ public class BaseGraphTest extends AbstractGraphStorageTester {
         }
     }
 
+    @Test
+    public void testGetCapacityIncreasesWhenGraphGrows() {
+        BaseGraph graph = newGHStorage(new RAMDirectory(), false);
+        graph.create(100);
+
+        long initialCapacity = graph.getCapacity();
+        assertTrue(initialCapacity > 0, "Initial capacity should be greater than 0");
+
+        graph.edge(0, 1).setDistance(100);
+        graph.edge(1, 2).setDistance(200);
+        graph.edge(2, 3).setDistance(300);
+
+        long newCapacity = graph.getCapacity();
+        assertTrue(newCapacity >= initialCapacity,
+            "Capacity should stay the same or increase after adding edges");
+
+        assertEquals(newCapacity, graph.getCapacity(),
+            "getCapacity() should be consistent across multiple calls");
+    }
 
     protected void checkGraph(Graph g) {
         NodeAccess na = g.getNodeAccess();

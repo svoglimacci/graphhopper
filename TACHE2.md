@@ -62,6 +62,29 @@ Ces données testent explicitement la condition if (`isFrozen()`) présente dans
 - Deuxième appel : `freeze()` doit lever une `IllegalStateException` avec le message `"base graph already frozen"`.
 - Si aucune exception n’est levée au deuxième appel, le test est considéré comme échoué, car le comportement attendu n’est pas respecté.
 
+### Test 4: CHStorage.testShortcuts()
+**Intention du test :**
+Ce test vérifie le comportement normal de la méthode `shortcutNodeBased()` de la classe `CHStorage`.
+L’objectif est de s’assurer que l’ajout de raccourcis dans un stockage node-based fonctionne correctement, que les index sont attribués de manière séquentielle et que les informations stockées (nœuds et poids) sont cohérentes.
+
+**Données de test :**
+- Un objet `CHStorage` créé avec un `RAMDirectory`, `edgeBased = false`, et initialisé avec 5 nœuds et 3 raccourcis attendus.
+- Deux appels successifs à `shortcutNodeBased()` avec des paramètres valides :
+    - Premier raccourci entre les nœuds 0 et 1 avec un poids de 10.5.
+    - Deuxième raccourci entre les nœuds 1 et 2 avec un poids de 12.3.
+- Lecture du premier raccourci via `toShortcutPointer()` pour valider les données stockées.
+
+**Oracle:**
+- Avant tout ajout : `getShortcuts()` retourne 0.
+- Après le premier ajout : `getShortcuts()` retourne 1 et l’index retourné vaut 0.
+- Après le second ajout : `getShortcuts()` retourne 2 et l’index retourné vaut 1.
+- Pour le premier raccourci :
+    - `getNodeA(ptr)` doit retourner 0.
+    - `getNodeB(ptr)` doit retourner 1.
+    - `getWeight(ptr)` doit retourner 10.5.
+
+Ces vérifications confirment que la méthode `shortcutNodeBased()` ajoute correctement les raccourcis, incrémente le compteur interne et stocke fidèlement les informations des nœuds et du poids associé.
+
 ## Analyse de Mutation - Tests Ajoutés
 
 - **Line Coverage (for mutated classes only):** ###/### (##%)

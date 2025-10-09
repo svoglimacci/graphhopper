@@ -64,18 +64,16 @@ Ces données testent explicitement la condition if (`isFrozen()`) présente dans
 
 ### Test 4: CHStorage.testMaxShortcutAndLowWeight()
 **Intention du test :**
-Ce test vérifie deux comportements exceptionnels de la méthode `shortcutNodeBased()` :
-1. Que la fonction appelle bien le consommateur (`.accept()`) lorsqu’un raccourci avec un poids extrêmement faible est ajouté.
-2. Qu’une exception est levée lorsque le nombre maximum de raccourcis est atteint.
+Ce test vérifie que la méthode `shortcutNodeBased()` appelle correctement le consommateur (`LowShortcutWeightConsumer`) lorsqu’un raccourci est créé avec un poids inférieur à la valeur minimale autorisée (`MIN_WEIGHT`).
 
 **Données de test :**
-- Un objet `CHStorage` créé avec des paramètres valides (5 nœuds, 3 raccourcis).
-- Un poids très faible (0.00001) pour déclencher l’appel au consommateur.
-- Un second `CHStorage` simulant un état où le compteur de raccourcis atteint `Integer.MAX_VALUE`, afin de forcer l’erreur.
+- Un objet `CHStorage` est initialisé avec des paramètres valides (`10` nœuds, `5` raccourcis).
+- Un consommateur (`Consumer<LowWeightShortcut>`) est assigné à `CHStorage` afin de détecter si la méthode `.accept()` est appelée.
+- Un raccourci est ensuite ajouté avec un poids très faible (`0.0001`), inférieur au seuil minimal.
 
 **Oracle:**
-- Lorsqu’un raccourci avec un poids inférieur à `MIN_WEIGHT` est ajouté, le consommateur (`.accept()`) doit être appelé.
-- Lorsque la limite maximale de raccourcis est atteinte, une exception `IllegalStateException` doit être levée avec le message indiquant “Maximum shortcut count exceeded”.
+- Lorsque le raccourci est ajouté avec un poids inférieur à `MIN_WEIGHT`, le consommateur doit être appelé.
+- L’appel du consommateur est confirmé par la variable `consumerCalled[0]`, qui doit passer à `true`.
 
 ### Test 5: BaseGraph.testGetCapacity()
 **Intention du test :**

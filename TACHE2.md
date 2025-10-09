@@ -85,6 +85,22 @@ L’objectif est de s’assurer que l’ajout de raccourcis dans un stockage nod
 
 Ces vérifications confirment que la méthode `shortcutNodeBased()` ajoute correctement les raccourcis, incrémente le compteur interne et stocke fidèlement les informations des nœuds et du poids associé.
 
+### Test 5: BaseGraph.testGetCapacityIncreasesWhenGraphGrows()
+**Intention du test :**
+Ce test vérifie que la méthode `getCapacity()` de la classe `BaseGraph` retourne une capacité positive après la création du graphe et que cette capacité augmente (ou reste stable) lorsque de nouvelles données sont ajoutées.
+L’objectif est de s’assurer que la capacité du stockage reflète bien l’allocation mémoire réelle utilisée par le graphe, et qu’elle ne diminue jamais au cours de son utilisation.
+
+**Données de test :**
+- Un objet `BaseGraph` créé avec un `RAMDirectory` et initialisé avec `create(100)`.
+- Ajout de plusieurs arêtes via `graph.edge(a, b).setDistance(x)` entre des nœuds successifs.
+- Comparaison des capacités avant et après ces ajouts.
+
+**Oracle:**
+- Avant tout ajout, `getCapacity()` doit retourner une valeur strictement positive.
+- Après l’ajout de plusieurs arêtes, `getCapacity()` doit retourner une valeur supérieure ou égale à la capacité initiale.
+- Des appels consécutifs à `getCapacity()` doivent produire la même valeur, garantissant que la méthode n’a pas d’effet de bord.
+Ces vérifications confirment que la capacité est calculée correctement et reste cohérente lors de la croissance du graphe.
+
 ## Analyse de Mutation - Tests Ajoutés
 
 - **Line Coverage (for mutated classes only):** ###/### (##%)

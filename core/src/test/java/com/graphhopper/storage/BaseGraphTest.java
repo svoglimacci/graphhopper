@@ -136,11 +136,9 @@ public class BaseGraphTest extends AbstractGraphStorageTester {
                 .setSegmentSize(1000)
                 .build();
 
-        // First call to freeze() should succeed
         graph.freeze();
         assertTrue(graph.isFrozen(), "Graph should be frozen after first call to freeze()");
 
-        // Second call should throw an exception
         try {
             graph.freeze();
             fail("Expected IllegalStateException on second freeze() call");
@@ -150,23 +148,19 @@ public class BaseGraphTest extends AbstractGraphStorageTester {
     }
 
     @Test
-    public void testGetCapacityIncreasesWhenGraphGrows() {
-        BaseGraph graph = newGHStorage(new RAMDirectory(), false);
-        graph.create(100);
+    public void testGetCapacity() {
+        BaseGraph graphWithTurnCosts = new BaseGraph.Builder(encodingManager).withTurnCosts(true).create();
+        BaseGraph graphWithoutTurnCosts = new BaseGraph.Builder(encodingManager).withTurnCosts(false).create();
 
-        long initialCapacity = graph.getCapacity();
-        assertTrue(initialCapacity > 0, "Initial capacity should be greater than 0");
+        graphWithTurnCosts.edge(0, 1);
+        graphWithoutTurnCosts.edge(0, 1);
 
-        graph.edge(0, 1).setDistance(100);
-        graph.edge(1, 2).setDistance(200);
-        graph.edge(2, 3).setDistance(300);
+        long capacityWith = graphWithTurnCosts.getCapacity();
+        long capacityWithout = graphWithoutTurnCosts.getCapacity();
 
-        long newCapacity = graph.getCapacity();
-        assertTrue(newCapacity >= initialCapacity,
-            "Capacity should stay the same or increase after adding edges");
-
-        assertEquals(newCapacity, graph.getCapacity(),
-            "getCapacity() should be consistent across multiple calls");
+        assertTrue(capacityWith > capacityWithout);
+        assertEquals(graphWithTurnCosts.getTurnCostStorage().getCapacity(),
+                capacityWith - capacityWithout);
     }
 
     protected void checkGraph(Graph g) {

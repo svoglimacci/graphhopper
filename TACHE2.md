@@ -77,21 +77,19 @@ Ce test vérifie deux comportements exceptionnels de la méthode `shortcutNodeBa
 - Lorsqu’un raccourci avec un poids inférieur à `MIN_WEIGHT` est ajouté, le consommateur (`.accept()`) doit être appelé.
 - Lorsque la limite maximale de raccourcis est atteinte, une exception `IllegalStateException` doit être levée avec le message indiquant “Maximum shortcut count exceeded”.
 
-### Test 5: BaseGraph.testGetCapacityIncreasesWhenGraphGrows()
+### Test 5: BaseGraph.testGetCapacity()
 **Intention du test :**
-Ce test vérifie que la méthode `getCapacity()` de la classe `BaseGraph` retourne une capacité positive après la création du graphe et que cette capacité augmente (ou reste stable) lorsque de nouvelles données sont ajoutées.
-L’objectif est de s’assurer que la capacité du stockage reflète bien l’allocation mémoire réelle utilisée par le graphe, et qu’elle ne diminue jamais au cours de son utilisation.
+Ce test vérifie que la méthode `getCapacity()` de la classe `BaseGraph` calcule correctement la capacité totale du graphe, en tenant compte de la présence ou non d’un stockage de coûts de virage (turn cost storage).
 
 **Données de test :**
-- Un objet `BaseGraph` créé avec un `RAMDirectory` et initialisé avec `create(100)`.
-- Ajout de plusieurs arêtes via `graph.edge(a, b).setDistance(x)` entre des nœuds successifs.
-- Comparaison des capacités avant et après ces ajouts.
+- Deux instances de BaseGraph sont créées à l’aide du Builder :
+    - l’une avec `withTurnCosts(true)`
+    - l’autre avec `withTurnCosts(false)`
+- Dans les deux graphes, une arête simple est ajoutée entre les nœuds `0` et `1`.
 
 **Oracle:**
-- Avant tout ajout, `getCapacity()` doit retourner une valeur strictement positive.
-- Après l’ajout de plusieurs arêtes, `getCapacity()` doit retourner une valeur supérieure ou égale à la capacité initiale.
-- Des appels consécutifs à `getCapacity()` doivent produire la même valeur, garantissant que la méthode n’a pas d’effet de bord.
-Ces vérifications confirment que la capacité est calculée correctement et reste cohérente lors de la croissance du graphe.
+- La capacité du graphe avec coûts de virage (`capacityWith`) doit être supérieure à celle du graphe sans (`capacityWithout`).
+- La différence entre les deux capacités doit correspondre exactement à la capacité du `TurnCostStorage` du graphe avec coûts de virage.
 
 ## Analyse de Mutation - Tests Ajoutés
 

@@ -443,4 +443,18 @@ public class BaseGraphTest extends AbstractGraphStorageTester {
         assertThrows(IllegalArgumentException.class, () -> ne.setGeoRef(0, 1L << 39));
         graph.close();
     }
+
+    @Test
+    public void testLoadExistingFailsWhenStoreNotInitialized() {
+        Directory dir = new RAMDirectory(); 
+        BaseGraph graph = new BaseGraph.Builder(encodingManager)
+                .setDir(dir)
+                .build(); 
+
+        // attempting to loadExisting() when no prior data exists should return false
+        boolean result = graph.loadExisting();
+
+        assertFalse(result, "Expected loadExisting() to return false when store.loadExisting() fails");
+    }
+
 }

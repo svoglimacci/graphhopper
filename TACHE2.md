@@ -89,6 +89,18 @@ Ce test vérifie que la méthode `getCapacity()` de la classe `BaseGraph` calcul
 - La capacité du graphe avec coûts de virage (`capacityWith`) doit être supérieure à celle du graphe sans (`capacityWithout`).
 - La différence entre les deux capacités doit correspondre exactement à la capacité du `TurnCostStorage` du graphe avec coûts de virage.
 
+### Test 6: BaseGraph.testLoadExistingFailsWhenStoreNotInitialized()
+**Intention du test :**
+Ce test vérifie le comportement de la méthode `loadExisting()` lorsqu’aucune donnée n’a encore été créée ni sauvegardée. Il s’assure que le graphe réagit correctement à l’absence de fichiers existants en retournant false sans provoquer d’exception.
+
+**Données de test :**
+- Un objet `BaseGraph` est créé à partir d’un répertoire mémoire vide (`RAMDirectory`), sans appel préalable à `.create()` ni `.flush()`.
+- Aucune donnée de graphe n’est donc disponible à charger.
+
+**Oracle:**
+- L’appel à `LoadExisting()` doit retourner `false`, puisque `store.loadExisting()` échoue naturellement dans un répertoire vide.
+- Aucune exception ne doit être levée, ce qui valide la gestion propre des cas d’absence de données.
+
 ## Analyse de Mutation - Tests Ajoutés
 
 - **Line Coverage (for mutated classes only):** ###/### (##%)

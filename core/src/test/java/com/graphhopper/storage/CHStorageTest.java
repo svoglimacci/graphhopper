@@ -3,6 +3,8 @@ package com.graphhopper.storage;
 import com.graphhopper.routing.ch.PrepareEncoder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import com.graphhopper.storage.CHStorage.LowWeightShortcut;
+import java.util.function.Consumer;
 
 import java.nio.file.Path;
 
@@ -84,28 +86,19 @@ class CHStorageTest {
     }
 
     @Test
-    void testMaxShortcutAndLowWeight() {
-        CHStorage store = new CHStorage(new RAMDirectory(), "car", -1, false);
-        store.create(5, 3);
-
-        // check that .accept() is called
-        boolean[] wasCalled = { false };
-        store.setLowShortcutWeightConsumer(shortcut -> wasCalled[0] = true);
-        store.shortcutNodeBased(0, 1, 0, 0.00001, 2, 3);
-        assertTrue(wasCalled[0], "Expected .accept() to be called for very low weight");
-
-        // check that an exception is thrown when max shortcut reached
-        CHStorage store2 = new CHStorage(new RAMDirectory(), "car", -1, false) {
-            @Override
-            public int shortcutNodeBased(int a, int b, int f, double w, int s1, int s2) {
-                throw new IllegalStateException("Maximum shortcut count exceeded: " + Integer.MAX_VALUE);
+    void testShortcutCallsAccept() {
+        CHStorage storage = new CHStorage(new RAMDirectory(), "test", -1, false);
+        storage.create(10, 5);
+        final boolean[] consumerCalled = {false};
+        storage.setLowShortcutWeightConsumer(new Consumer<LowWeightShortcut>() {
+            public void accept(CHStorage.LowWeightShortcut shortcut) {
+                consumerCalled[0] = true;
             }
-        };
-        store2.create(5, 3);
+        });
 
-        assertThrows(IllegalStateException.class,
-                () -> store2.shortcutNodeBased(0, 1, 0, 10.0, 2, 3),
-                "Should throw when max shortcut count is reached");
+        storage.shortcutNodeBased(0, 1, 0, 0.0001, 0, 0);
+
+        assertTrue(consumerCalled[0]);
     }
 
 

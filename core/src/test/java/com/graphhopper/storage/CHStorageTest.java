@@ -83,6 +83,30 @@ class CHStorageTest {
     }
 
     @Test
+    public void testShortcuts() {
+        RAMDirectory dir = new RAMDirectory();
+        CHStorage store = new CHStorage(dir, "car", -1, false);
+        store.create(5, 3);
+
+        assertEquals(0, store.getShortcuts(), "Initially the shortcut count should be 0");
+
+        // add a shortcut
+        int index = store.shortcutNodeBased(0, 1, 0, 10.5, 2, 3);
+
+        assertEquals(1, store.getShortcuts(), "Shortcut count should increase after adding one");
+        assertEquals(0, index, "First shortcut index should be 0");
+
+        // add another shortcut
+        int index2 = store.shortcutNodeBased(1, 2, 0, 12.3, 3, 4);
+        assertEquals(1, index2, "Second shortcut index should be 1");
+
+        long ptr = store.toShortcutPointer(index);
+        assertEquals(0, store.getNodeA(ptr));
+        assertEquals(1, store.getNodeB(ptr));
+        assertEquals(10.5, store.getWeight(ptr));
+    }
+
+    @Test
     public void testBigWeight() {
         CHStorage g = new CHStorage(new RAMDirectory(), "abc", 1024, false);
         g.shortcutNodeBased(0, 0, 0, 10, 0, 1);

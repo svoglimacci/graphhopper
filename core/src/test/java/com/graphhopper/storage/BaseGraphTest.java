@@ -20,9 +20,14 @@ package com.graphhopper.storage;
 import com.carrotsearch.hppc.IntArrayList;
 import com.graphhopper.routing.ev.EnumEncodedValue;
 import com.graphhopper.routing.ev.RoadClass;
+import com.graphhopper.routing.util.AllEdgesIterator;
 import com.graphhopper.search.KVStorage.KValue;
+import com.graphhopper.storage.BaseGraph.AllEdgeIterator;
 import com.graphhopper.util.*;
 import com.graphhopper.util.shapes.BBox;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.HashSet;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -127,41 +132,7 @@ public class BaseGraphTest extends AbstractGraphStorageTester {
         assertTrue(graph.isFrozen());
     }
 
-    @Test
-    void testFreezeThrowsExceptions() {
-        RAMDirectory dir = new RAMDirectory();
-        BaseGraph graph = new BaseGraph.Builder(encodingManager)
-                .setDir(dir)
-                .set3D(false)
-                .setSegmentSize(1000)
-                .build();
 
-        graph.freeze();
-        assertTrue(graph.isFrozen(), "Graph should be frozen after first call to freeze()");
-
-        try {
-            graph.freeze();
-            fail("Expected IllegalStateException on second freeze() call");
-        } catch (IllegalStateException exception) {
-            assertEquals("base graph already frozen", exception.getMessage());
-        }
-    }
-
-    @Test
-    public void testGetCapacity() {
-        BaseGraph graphWithTurnCosts = new BaseGraph.Builder(encodingManager).withTurnCosts(true).create();
-        BaseGraph graphWithoutTurnCosts = new BaseGraph.Builder(encodingManager).withTurnCosts(false).create();
-
-        graphWithTurnCosts.edge(0, 1);
-        graphWithoutTurnCosts.edge(0, 1);
-
-        long capacityWith = graphWithTurnCosts.getCapacity();
-        long capacityWithout = graphWithoutTurnCosts.getCapacity();
-
-        assertTrue(capacityWith > capacityWithout);
-        assertEquals(graphWithTurnCosts.getTurnCostStorage().getCapacity(),
-                capacityWith - capacityWithout);
-    }
 
     protected void checkGraph(Graph g) {
         NodeAccess na = g.getNodeAccess();
@@ -444,17 +415,78 @@ public class BaseGraphTest extends AbstractGraphStorageTester {
         graph.close();
     }
 
+    // IFT3913 Test 6
     @Test
     public void testLoadExistingFailsWhenStoreNotInitialized() {
-        Directory dir = new RAMDirectory(); 
+        Directory dir = new RAMDirectory();
         BaseGraph graph = new BaseGraph.Builder(encodingManager)
                 .setDir(dir)
-                .build(); 
+                .build();
 
         // attempting to loadExisting() when no prior data exists should return false
         boolean result = graph.loadExisting();
 
         assertFalse(result, "Expected loadExisting() to return false when store.loadExisting() fails");
     }
+    // IFT3913 Test 3
+    @Test
+    void testFreezeThrowsExceptions() {
+        RAMDirectory dir = new RAMDirectory();
+        BaseGraph graph = new BaseGraph.Builder(encodingManager)
+                .setDir(dir)
+                .set3D(false)
+                .setSegmentSize(1000)
+                .build();
+
+        graph.freeze();
+        assertTrue(graph.isFrozen(), "Graph should be frozen after first call to freeze()");
+
+        try {
+            graph.freeze();
+            fail("Expected IllegalStateException on second freeze() call");
+        } catch (IllegalStateException exception) {
+            assertEquals("base graph already frozen", exception.getMessage());
+        }
+    }
+    // IFT3913 Test 5
+    @Test
+    public void testGetCapacity() {
+        BaseGraph graphWithTurnCosts = new BaseGraph.Builder(encodingManager).withTurnCosts(true).create();
+        BaseGraph graphWithoutTurnCosts = new BaseGraph.Builder(encodingManager).withTurnCosts(false).create();
+
+        graphWithTurnCosts.edge(0, 1);
+        graphWithoutTurnCosts.edge(0, 1);
+
+        long capacityWith = graphWithTurnCosts.getCapacity();
+        long capacityWithout = graphWithoutTurnCosts.getCapacity();
+
+        assertTrue(capacityWith > capacityWithout);
+        assertEquals(graphWithTurnCosts.getTurnCostStorage().getCapacity(),
+                capacityWith - capacityWithout);
+    }
+
+    // IFT3913 Test 7
+    @Test
+    public void testGetAllEdges() {
+        BaseGraph graph = createGHStorage();
+        graph.edge(0, 1);
+        graph.edge(0, 2);
+        graph.edge(0, 3);
+        graph.edge(0, 4);
+        graph.edge(0, 5);
+
+        Set<Integer> expectedEdges = new HashSet<>(Arrays.asList(0, 1, 2, 3, 4));
+        Set<Integer> actualEdges = new HashSet<>();
+
+        AllEdgesIterator allEdgeIterator = graph.getAllEdges();
+        while (allEdgeIterator.next()) {
+            if (allEdgeIterator.getBaseNode() == 0 || allEdgeIterator.getAdjNode() == 0) {
+                actualEdges.add(allEdgeIterator.getEdge());
+            }
+        }
+
+        assertEquals(expectedEdges, actualEdges, "The set of edges connected to node 0 does not match the expected set");
+    }
+
 
 }

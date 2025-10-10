@@ -1,5 +1,6 @@
 package com.graphhopper.storage;
 
+import com.github.javafaker.Faker;
 import com.graphhopper.routing.ch.PrepareEncoder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -66,41 +67,6 @@ class CHStorageTest {
         }
     }
 
-    @Test
-    void testCreateThrowsExceptions() {
-        RAMDirectory dir = new RAMDirectory();
-        CHStorage store = new CHStorage(dir, "", -1, false);
-
-        try {
-            store.create(-1, 5);
-        } catch (IllegalStateException exception) {
-            assertEquals("CHStorage must be created with a positive number of nodes", exception.getMessage());
-        }
-
-        store.create(10, 5);
-        try {
-            store.create(10, 5);
-        } catch (IllegalStateException exception) {
-            assertEquals("CHStorage can only be created once", exception.getMessage());
-        }
-    }
-
-    @Test
-    void testShortcutCallsAccept() {
-        CHStorage storage = new CHStorage(new RAMDirectory(), "test", -1, false);
-        storage.create(10, 5);
-        final boolean[] consumerCalled = {false};
-        storage.setLowShortcutWeightConsumer(new Consumer<LowWeightShortcut>() {
-            public void accept(CHStorage.LowWeightShortcut shortcut) {
-                consumerCalled[0] = true;
-            }
-        });
-
-        storage.shortcutNodeBased(0, 1, 0, 0.0001, 0, 0);
-
-        assertTrue(consumerCalled[0]);
-    }
-
 
     @Test
     public void testBigWeight() {
@@ -131,7 +97,7 @@ class CHStorageTest {
         assertEquals(Integer.MAX_VALUE, access.getInt(0) >>> 1);
     }
 
-
+    // IFT3913 Test 1
     @Test
     public void testIsClosed() {
         RAMDirectory dir = new RAMDirectory();
@@ -145,6 +111,87 @@ class CHStorageTest {
         chStorage.close();
         assertTrue(chStorage.isClosed(), "CHStorage should be closed after calling close()");
     }
+
+    // IFT3913 Test 2
+    @Test
+    void testCreateThrowsExceptions() {
+        RAMDirectory dir = new RAMDirectory();
+        CHStorage store = new CHStorage(dir, "", -1, false);
+
+        try {
+            store.create(-1, 5);
+        } catch (IllegalStateException exception) {
+            assertEquals("CHStorage must be created with a positive number of nodes", exception.getMessage());
+        }
+
+        store.create(10, 5);
+        try {
+            store.create(10, 5);
+        } catch (IllegalStateException exception) {
+            assertEquals("CHStorage can only be created once", exception.getMessage());
+        }
+    }
+    // IFT3913 Test 4
+    @Test
+    void testShortcutAndLowWeight() {
+        CHStorage storage = new CHStorage(new RAMDirectory(), "test", -1, false);
+        storage.create(10, 5);
+        final boolean[] consumerCalled = {false};
+        storage.setLowShortcutWeightConsumer(new Consumer<LowWeightShortcut>() {
+            public void accept(CHStorage.LowWeightShortcut shortcut) {
+                consumerCalled[0] = true;
+            }
+        });
+
+        storage.shortcutNodeBased(0, 1, 0, 0.0001, 0, 0);
+
+        assertTrue(consumerCalled[0]);
+    }
+
+    // IFT3913 Test JavaFaker
+    @Test
+    void testToDetailsString() {
+        Faker faker = new Faker();
+        RAMDirectory dir = new RAMDirectory();
+        String storageName = faker.name().firstName().toLowerCase();
+        CHStorage storage = new CHStorage(dir, storageName, -1, false);
+
+        // Generate random counts within reasonable bounds
+        int nodeCount = faker.number().numberBetween(10, 1000);
+        int shortcutCount = faker.number().numberBetween(5, 500);
+
+        storage.create(nodeCount, shortcutCount);
+
+        // Add some random shortcuts to populate the storage
+        for (int i = 0; i < Math.min(shortcutCount, 10); i++) {
+            int nodeA = faker.number().numberBetween(0, nodeCount - 1);
+            int nodeB = faker.number().numberBetween(0, nodeCount - 1);
+            double weight = faker.number().randomDouble(3, 1, 100);
+            int skip1 = faker.number().numberBetween(0, 20);
+            int skip2 = faker.number().numberBetween(0, 20);
+
+            storage.shortcutNodeBased(nodeA, nodeB, PrepareEncoder.getScFwdDir(),
+                    weight, skip1, skip2);
+        }
+
+        String details = storage.toDetailsString();
+
+        // Verify the string contains expected components
+        assertTrue(details.contains("shortcuts:"));
+        assertTrue(details.contains("nodesCH:"));
+        assertTrue(details.contains("MB"));
+
+        // Verify it contains the actual counts
+        assertTrue(details.contains(String.valueOf(storage.getShortcuts())));
+        assertTrue(details.contains(String.valueOf(nodeCount)));
+
+        // Verify basic format structure
+        String[] parts = details.split(",");
+        assertEquals(2, parts.length, "Details string should have two main parts");
+        assertTrue(parts[0].trim().startsWith("shortcuts:"));
+        assertTrue(parts[1].trim().startsWith("nodesCH:"));
+    }
+
 
 
 }

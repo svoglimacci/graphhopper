@@ -157,15 +157,18 @@
                 <artifactId>pitest-maven</artifactId>
                 <version>1.15.0</version>
                 <configuration>
-                    <targetClasses>
-                        <param>com.graphhopper.storage.CHStorage</param>
-                        <param>com.graphhopper.storage.BaseGraph</param>
-                    </targetClasses>
-                    <targetTests>
-                        <param>com.graphhopper.storage.CHStorageTest</param>
-                        <param>com.graphhopper.storage.BaseGraphTest</param>
-                    </targetTests>
-
+                <historyInputLocation>target/pit-reports-history</historyInputLocation>
+                <historyOutputLocation>target/pit-reports-history</historyOutputLocation>
+                <outputFormats>HTML,XML</outputFormats>
+                <timestampedReports>false</timestampedReports>
+                <targetClasses>
+                    <param>com.graphhopper.storage.CHStorage</param>
+                    <param>com.graphhopper.storage.BaseGraph</param>
+                </targetClasses>
+                <targetTests>
+                    <param>com.graphhopper.storage.CHStorageTest</param>
+                    <param>com.graphhopper.storage.BaseGraphTest</param>
+                </targetTests>
                     <junit5Plugin>org.pitest.junit5</junit5Plugin>
                 </configuration>
                 <dependencies>

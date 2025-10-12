@@ -203,7 +203,6 @@
                     <version>1.15.0</version>
                     <configuration>
                         <outputFormats>
-                            <outputFormat>XML</outputFormat>
                             <outputFormat>HTML</outputFormat>
                         </outputFormats>
                         <targetClasses>

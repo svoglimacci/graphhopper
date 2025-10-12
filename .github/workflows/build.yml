@@ -37,8 +37,11 @@ jobs:
       - name: Build ${{ matrix.java-version }}
         run: mvn -B clean test
 
+      - name: Build ${{ matrix.java-version }}
+        run: mvn -B clean compile test-compile
+
       - name: Run PIT Mutation Testing
-        run: mvn -pl core org.pitest:pitest-maven:mutationCoverage test-compile
+        run: mvn -pl core org.pitest:pitest-maven:mutationCoverage
 
       - name: Restore Previous Mutation Score
         id: cache-mutation

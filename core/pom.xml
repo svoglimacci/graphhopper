@@ -157,11 +157,11 @@
                 <artifactId>pitest-maven</artifactId>
                 <version>1.15.0</version>
                 <configuration>
-                <historyInputLocation>target/pit-reports-history</historyInputLocation>
-                <historyOutputLocation>target/pit-reports-history</historyOutputLocation>
-                <outputFormats>HTML,XML</outputFormats>
-                <timestampedReports>false</timestampedReports>
-                <targetClasses>
+                    <outputFormats>
+                        <outputFormat>XML</outputFormat>
+                        <outputFormat>HTML</outputFormat>
+                    </outputFormats>
+                    <targetClasses>
                     <param>com.graphhopper.storage.CHStorage</param>
                     <param>com.graphhopper.storage.BaseGraph</param>
                 </targetClasses>

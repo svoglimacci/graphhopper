@@ -79,13 +79,14 @@ jobs:
             echo "::notice::Mutation score maintained or improved: ${CURRENT_SCORE}%"
           fi
 
+      - name: Create Baseline File
+        if: github.ref == 'refs/heads/main'
+        run: echo "${{ steps.mutation.outputs.score-number }}" > mutation-baseline.txt
+    
       - name: Save New Mutation Score
         if: github.ref == 'refs/heads/main'
         uses: actions/cache/save@v4
         with:
           path: mutation-baseline.txt
           key: mutation-score-${{ github.ref_name }}
-        env:
-          SCORE: ${{ steps.mutation.outputs.score-number }}
-        run: echo "$SCORE" > mutation-baseline.txt
 

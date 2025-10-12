@@ -197,7 +197,33 @@
                         <argLine>@{argLine} -Xmx190m -Xms190m -Duser.language=en</argLine>
                     </configuration>
                 </plugin>
-
+                <plugin>
+                    <groupId>org.pitest</groupId>
+                    <artifactId>pitest-maven</artifactId>
+                    <version>1.15.0</version>
+                    <configuration>
+                        <outputFormats>
+                            <outputFormat>XML</outputFormat>
+                            <outputFormat>HTML</outputFormat>
+                        </outputFormats>
+                        <targetClasses>
+                            <param>com.graphhopper.storage.CHStorage</param>
+                            <param>com.graphhopper.storage.BaseGraph</param>
+                        </targetClasses>
+                        <targetTests>
+                            <param>com.graphhopper.storage.CHStorageTest</param>
+                            <param>com.graphhopper.storage.BaseGraphTest</param>
+                        </targetTests>
+                        <junit5Plugin>org.pitest.junit5</junit5Plugin>
+                    </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.pitest</groupId>
+                            <artifactId>pitest-junit5-plugin</artifactId>
+                            <version>1.2.1</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>

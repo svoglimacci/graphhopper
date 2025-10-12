@@ -36,6 +36,7 @@ jobs:
             ${{ runner.os}}-node_modules-
       - name: Build ${{ matrix.java-version }}
         run: mvn -B clean test
+
       - name: Run PIT Mutation Testing
         run: mvn -pl core org.pitest:pitest-maven:mutationCoverage
 
@@ -82,7 +83,7 @@ jobs:
       - name: Create Baseline File
         if: github.ref == 'refs/heads/main'
         run: echo "${{ steps.mutation.outputs.score-number }}" > mutation-baseline.txt
-    
+
       - name: Save New Mutation Score
         if: github.ref == 'refs/heads/main'
         uses: actions/cache/save@v4

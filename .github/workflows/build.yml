@@ -38,7 +38,7 @@ jobs:
         run: mvn -B clean test
 
       - name: Run PIT Mutation Testing
-        run: mvn -pl core org.pitest:pitest-maven:mutationCoverage
+        run: mvn -pl core org.pitest:pitest-maven:mutationCoverage test-compile
 
       - name: Restore Previous Mutation Score
         id: cache-mutation

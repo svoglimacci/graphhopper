@@ -36,4 +36,6 @@ jobs:
             ${{ runner.os}}-node_modules-
       - name: Build ${{ matrix.java-version }}
         run: mvn -B clean test
+      - name: Run pitest
+        run: mvn org.pitest:pitest-maven:mutationCoverage -DhistoryInputFile=history.txt -DhistoryOutputFile=history.txt -Dfeatures="+GIT(from[HEAD~1]), +exclusionscan, +gitci" test-compile
 

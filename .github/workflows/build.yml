@@ -55,9 +55,9 @@ jobs:
               body: '![Image](https://github.com/user-attachments/assets/b50b5b80-9470-40e8-ad9f-a28902d45cff)'
             })
 
-        - name: Fail Build if Tests Failed
-          if: steps.tests.outcome == 'failure'
-          run: exit 1
+      - name: Fail Build if Tests Failed
+        if: steps.tests.outcome == 'failure'
+        run: exit 1
 
       - name: Run PIT Mutation Testing
         run: mvn -pl core org.pitest:pitest-maven:mutationCoverage

@@ -41,10 +41,9 @@ jobs:
       - name: Run Tests
         id: tests
         run: mvn test
-        continue-on-error: true
 
       - name: Rick roll if Tests Failed
-        if: steps.tests.outcome == 'failure'
+        if: always() && steps.tests.outcome == 'failure'
         uses: actions/github-script@v7
         with:
           script: |
@@ -56,7 +55,7 @@ jobs:
             })
 
       - name: Fail Build if Tests Failed
-        if: steps.tests.outcome == 'failure'
+        if: always() && steps.tests.outcome == 'failure'
         run: exit 1
 
       - name: Run PIT Mutation Testing

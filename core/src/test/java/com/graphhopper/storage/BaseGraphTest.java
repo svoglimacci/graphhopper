@@ -489,11 +489,5 @@ public class BaseGraphTest extends AbstractGraphStorageTester {
     }
 
 
-    @Test
-    public void failingTest() {
-        fail("This test is intentionally failing");
-    }
-
-
 
 }

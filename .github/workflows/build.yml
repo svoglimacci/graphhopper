@@ -37,6 +37,24 @@ jobs:
       - name: Build ${{ matrix.java-version }}
         run: mvn -B clean install -DskipTests
 
+      - name: Restore Previous Mutation Score
+        id: cache-mutation
+        uses: actions/cache/restore@v4
+        with:
+          path: mutation-baseline.txt
+          key: mutation-score-${{ github.ref_name }}
+          restore-keys: |
+            mutation-score-master
+
+      - name: Extract Mutation Score
+        id: mutation
+        run: |
+          HTML_FILE=$(find core/target/pit-reports -name "index.html" -type f | head -1)
+          MUTATION_SCORE=$(sed -n '/<tbody>/,/<\/tbody>/p' "$HTML_FILE" | grep -o '<td>[0-9]\+%' | sed -n '2p' | grep -o '[0-9]\+%')
+          SCORE_NUMBER=$(echo $MUTATION_SCORE | grep -o '[0-9]\+')
+          echo "::notice::Current Mutation Coverage: $MUTATION_SCORE"
+          echo "mutation-score=$MUTATION_SCORE" >> $GITHUB_OUTPUT
+          echo "score-number=$SCORE_NUMBER" >> $GITHUB_OUTPUT
 
       - name: Run Tests
         id: tests
@@ -61,24 +79,6 @@ jobs:
       - name: Run PIT Mutation Testing
         run: mvn -pl core org.pitest:pitest-maven:mutationCoverage
 
-      - name: Restore Previous Mutation Score
-        id: cache-mutation
-        uses: actions/cache/restore@v4
-        with:
-          path: mutation-baseline.txt
-          key: mutation-score-${{ github.ref_name }}
-          restore-keys: |
-            mutation-score-main
-
-      - name: Extract Mutation Score
-        id: mutation
-        run: |
-          HTML_FILE=$(find core/target/pit-reports -name "index.html" -type f | head -1)
-          MUTATION_SCORE=$(sed -n '/<tbody>/,/<\/tbody>/p' "$HTML_FILE" | grep -o '<td>[0-9]\+%' | sed -n '2p' | grep -o '[0-9]\+%')
-          SCORE_NUMBER=$(echo $MUTATION_SCORE | grep -o '[0-9]\+')
-          echo "::notice::Current Mutation Coverage: $MUTATION_SCORE"
-          echo "mutation-score=$MUTATION_SCORE" >> $GITHUB_OUTPUT
-          echo "score-number=$SCORE_NUMBER" >> $GITHUB_OUTPUT
 
       - name: Compare with Previous Score
         run: |
@@ -102,11 +102,11 @@ jobs:
           fi
 
       - name: Create Baseline File
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/master'
         run: echo "${{ steps.mutation.outputs.score-number }}" > mutation-baseline.txt
 
       - name: Save New Mutation Score
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/master'
         uses: actions/cache/save@v4
         with:
           path: mutation-baseline.txt

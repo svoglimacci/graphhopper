@@ -41,7 +41,7 @@ jobs:
         id: tests
         run: mvn test
 
-      - name: Rick roll if Tests Failed
+      - name: Rick Roll if Tests Failed
         if: always() && steps.tests.outcome == 'failure' && matrix.java-version == '24'
         uses: actions/github-script@v7
         with:
@@ -65,16 +65,28 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: mutation-baseline.txt
-          key: mutation-score-master-${{ github.run_id }}
+          key: mutation-score-master
           restore-keys: |
-            mutation-score-master-
+            mutation-score-master
 
       - name: Extract Mutation Score
         id: mutation
         run: |
           HTML_FILE=$(find core/target/pit-reports -name "index.html" -type f | head -1)
-          MUTATION_SCORE=$(sed -n '/<tbody>/,/<\/tbody>/p' "$HTML_FILE" | grep -o '<td>[0-9]\+%' | sed -n '2p' | grep -o '[0-9]\+%')
-          SCORE_NUMBER=$(echo $MUTATION_SCORE | grep -o '[0-9]\+')
+          
+          if [ -z "$HTML_FILE" ]; then
+            echo "::error::PIT report not found"
+            exit 1
+          fi
+          
+          MUTATION_SCORE=$(sed -n '/<tbody>/,/<\/tbody>/p' "$HTML_FILE" | grep -o '[0-9]\+%' | sed -n '2p')
+          SCORE_NUMBER=$(echo "$MUTATION_SCORE" | grep -o '[0-9]\+')
+          
+          if [ -z "$SCORE_NUMBER" ]; then
+            echo "::error::Could not extract mutation score"
+            exit 1
+          fi
+          
           echo "::notice::Current Mutation Coverage: $MUTATION_SCORE"
           echo "mutation-score=$MUTATION_SCORE" >> $GITHUB_OUTPUT
           echo "score-number=$SCORE_NUMBER" >> $GITHUB_OUTPUT
@@ -85,13 +97,13 @@ jobs:
           
           if [ -f mutation-baseline.txt ]; then
             BASELINE_SCORE=$(cat mutation-baseline.txt)
-            echo "Previous mutation score: ${BASELINE_SCORE}%"
+            echo "::notice::Previous mutation score: ${BASELINE_SCORE}%"
           else
-            echo "No previous score found, using current as baseline"
+            echo "::notice::No previous score found, setting baseline to current score"
             BASELINE_SCORE=$CURRENT_SCORE
           fi
           
-          echo "Current mutation score: ${CURRENT_SCORE}%"
+          echo "::notice::Current mutation score: ${CURRENT_SCORE}%"
           
           if [ "$CURRENT_SCORE" -lt "$BASELINE_SCORE" ]; then
             echo "::error::Mutation score decreased from ${BASELINE_SCORE}% to ${CURRENT_SCORE}%"
@@ -100,9 +112,15 @@ jobs:
             echo "::notice::Mutation score maintained or improved: ${CURRENT_SCORE}%"
           fi
 
+      - name: Write Mutation Score to File
+        if: github.ref == 'refs/heads/master'
+        run: |
+          echo "${{ steps.mutation.outputs.score-number }}" > mutation-baseline.txt
+          echo "::notice::Saved new baseline: ${{ steps.mutation.outputs.score-number }}%"
+
       - name: Save New Mutation Score
-        if: github.ref == 'refs/heads/master' && steps.mutation.outputs.score-number != ''
+        if: github.ref == 'refs/heads/master'
         uses: actions/cache/save@v4
         with:
           path: mutation-baseline.txt
-          key: mutation-score-master-${{ github.run_id }}
+          key: mutation-score-master

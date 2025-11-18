@@ -37,26 +37,25 @@ jobs:
       - name: Build ${{ matrix.java-version }}
         run: mvn -B clean install -DskipTests
 
+      - name: Run Tests
+        id: tests
+        run: mvn test
 
-#      - name: Run Tests
-#        id: tests
-#        run: mvn test
-#
-#      - name: Rick roll if Tests Failed
-#        if: always() && steps.tests.outcome == 'failure' && matrix.java-version == '24'
-#        uses: actions/github-script@v7
-#        with:
-#          script: |
-#            github.rest.repos.createCommitComment({
-#              owner: context.repo.owner,
-#              repo: context.repo.repo,
-#              commit_sha: context.sha,
-#              body: '![Image](https://github.com/user-attachments/assets/b50b5b80-9470-40e8-ad9f-a28902d45cff)'
-#            })
-#
-#      - name: Fail Build if Tests Failed
-#        if: always() && steps.tests.outcome == 'failure'
-#        run: exit 1
+      - name: Rick roll if Tests Failed
+        if: always() && steps.tests.outcome == 'failure' && matrix.java-version == '24'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.repos.createCommitComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: context.sha,
+              body: '![Image](https://github.com/user-attachments/assets/b50b5b80-9470-40e8-ad9f-a28902d45cff)'
+            })
+
+      - name: Fail Build if Tests Failed
+        if: always() && steps.tests.outcome == 'failure'
+        run: exit 1
 
       - name: Run PIT Mutation Testing
         run: mvn -pl core org.pitest:pitest-maven:mutationCoverage
@@ -66,9 +65,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: mutation-baseline.txt
-          key: mutation-score-master
+          key: mutation-score-master-${{ github.run_id }}
           restore-keys: |
-            mutation-score-master
+            mutation-score-master-
 
       - name: Extract Mutation Score
         id: mutation
@@ -79,10 +78,6 @@ jobs:
           echo "::notice::Current Mutation Coverage: $MUTATION_SCORE"
           echo "mutation-score=$MUTATION_SCORE" >> $GITHUB_OUTPUT
           echo "score-number=$SCORE_NUMBER" >> $GITHUB_OUTPUT
-
-      - name: Create Baseline File
-        if: github.ref == 'refs/heads/master'
-        run: echo "${{ steps.mutation.outputs.score-number }}" > mutation-baseline.txt
 
       - name: Compare with Previous Score
         run: |
@@ -105,13 +100,9 @@ jobs:
             echo "::notice::Mutation score maintained or improved: ${CURRENT_SCORE}%"
           fi
 
-      - name: Update Baseline File with Latest Score
-        if: github.ref == 'refs/heads/master'
-        run: echo "${{ steps.mutation.outputs.score-number }}" > mutation-baseline.txt
-
       - name: Save New Mutation Score
-        if: github.ref == 'refs/heads/master'
+        if: github.ref == 'refs/heads/master' && steps.mutation.outputs.score-number != ''
         uses: actions/cache/save@v4
         with:
           path: mutation-baseline.txt
-          key: mutation-score-master
+          key: mutation-score-master-${{ github.run_id }}

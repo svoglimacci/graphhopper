@@ -32,6 +32,7 @@ import java.util.Random;
 import static com.graphhopper.util.Parameters.Details.STREET_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Karl Hübner
@@ -171,4 +172,5 @@ public class BaseGraphWithTurnCostsTest extends BaseGraphTest {
     private void setTurnCost(int fromEdge, int viaNode, int toEdge, int cost) {
         graph.getTurnCostStorage().set(turnCostEnc, fromEdge, viaNode, toEdge, cost);
     }
+
 }

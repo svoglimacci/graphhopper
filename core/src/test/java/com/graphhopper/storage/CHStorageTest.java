@@ -8,9 +8,11 @@ import com.graphhopper.storage.CHStorage.LowWeightShortcut;
 import java.util.function.Consumer;
 
 import java.nio.file.Path;
+import org.mockito.Mockito;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -192,6 +194,56 @@ class CHStorageTest {
         assertTrue(parts[1].trim().startsWith("nodesCH:"));
     }
 
+    // IFT3913 Test Mockito 1
+    @Test
+    void testGetCapacityWithMockito() {
+        Directory mockDirectory = Mockito.mock(Directory.class);
+        DataAccess mockNodesCH = Mockito.mock(DataAccess.class);
+        DataAccess mockShortcuts = Mockito.mock(DataAccess.class);
 
+        Mockito.when(mockDirectory.create(Mockito.startsWith("nodes_ch_"), (DAType) Mockito.any(), Mockito.anyInt()))
+                .thenReturn(mockNodesCH);
+        Mockito.when(mockDirectory.create(Mockito.startsWith("shortcuts_"), (DAType) Mockito.any(), Mockito.anyInt()))
+                .thenReturn(mockShortcuts);
+        Mockito.when(mockNodesCH.getCapacity()).thenReturn(100L);
+        Mockito.when(mockShortcuts.getCapacity()).thenReturn(200L);
+
+        CHStorage storage = new CHStorage(mockDirectory, "test", -1, false);
+
+        assertEquals(300L, storage.getCapacity(), "getCapacity should return the sum of nodesCH and shortcuts capacities");
+    }
+
+    // IFT3913 Test Mockito 2
+    @Test
+    void testfromGraphWithMockito() {
+        BaseGraph mockBaseGraph = Mockito.mock(BaseGraph.class);
+        CHConfig mockCHConfig = Mockito.mock(CHConfig.class);
+        Directory mockDirectory = Mockito.mock(Directory.class);
+        DataAccess mockNodesCH = Mockito.mock(DataAccess.class);
+        DataAccess mockShortcuts = Mockito.mock(DataAccess.class);
+
+
+        Mockito.when(mockCHConfig.getName()).thenReturn("mockGraph");
+        Mockito.when(mockCHConfig.isEdgeBased()).thenReturn(false);
+        Mockito.when(mockBaseGraph.isFrozen()).thenReturn(true);
+        Mockito.when(mockBaseGraph.getDirectory()).thenReturn(mockDirectory);
+        Mockito.when(mockBaseGraph.getSegmentSize()).thenReturn(-1);
+        Mockito.when(mockBaseGraph.getEdges()).thenReturn(10);
+        Mockito.when(mockBaseGraph.getNodes()).thenReturn(5);
+        Mockito.when(mockDirectory.create(Mockito.startsWith("nodes_ch_"), (DAType) Mockito.any(), Mockito.anyInt())).thenReturn(mockNodesCH);
+        Mockito.when(mockDirectory.create(Mockito.startsWith("shortcuts_"), (DAType) Mockito.any(), Mockito.anyInt())).thenReturn(mockShortcuts);
+
+        CHStorage storage = CHStorage.fromGraph(mockBaseGraph, mockCHConfig);
+        assertEquals(5, storage.getNodes());
+        assertTrue(storage.getShortcuts() >= 0);
+        assertFalse(storage.isEdgeBased());
+        assertNotNull(storage);
+
+        Mockito.when(mockBaseGraph.isFrozen()).thenReturn(false);
+        Exception exception = assertThrows(IllegalStateException.class, () -> {
+            CHStorage.fromGraph(mockBaseGraph, mockCHConfig);
+        });
+        assertTrue(exception.getMessage().toLowerCase().contains("frozen"));
+    }
 
 }

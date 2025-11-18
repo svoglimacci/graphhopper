@@ -59,4 +59,5 @@ public class MMapDataAccessTest extends DataAccessTest {
         assertEquals(123, da.getInt(7 * 4));
         da.close();
     }
+
 }

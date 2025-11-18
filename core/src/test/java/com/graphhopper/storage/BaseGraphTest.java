@@ -378,6 +378,119 @@ public class BaseGraphTest extends AbstractGraphStorageTester {
         assertEquals(IntArrayList.from(edge3.getEdge(), edge2.getEdge()), edges);
     }
 
+    @Test
+    public void copyEdge_changeGeometry() {
+        BaseGraph graph = createGHStorage();
+        EnumEncodedValue<RoadClass> rcEnc = encodingManager.getEnumEncodedValue(RoadClass.KEY, RoadClass.class);
+        EdgeIteratorState edge1 = graph.edge(1, 2).set(rcEnc, RoadClass.FOOTWAY);
+        EdgeIteratorState edge2 = graph.edge(1, 3).set(rcEnc, RoadClass.FOOTWAY).setWayGeometry(Helper.createPointList(0, 1, 2, 3));
+        EdgeIteratorState edge3 = graph.edge(1, 4).set(rcEnc, RoadClass.FOOTWAY).setWayGeometry(Helper.createPointList(4, 5, 6, 7));
+        EdgeIteratorState edge4 = graph.copyEdge(edge1.getEdge(), true);
+        EdgeIteratorState edge5 = graph.copyEdge(edge3.getEdge(), true);
+
+        // after copying an edge we can no longer change the geometry
+        assertThrows(IllegalStateException.class, () -> graph.getEdgeIteratorState(edge1.getEdge(), Integer.MIN_VALUE).setWayGeometry(Helper.createPointList(1.5, 1, 5, 4)));
+        // after setting the geometry once we can change it again
+        graph.getEdgeIteratorState(edge2.getEdge(), Integer.MIN_VALUE).setWayGeometry(Helper.createPointList(2, 3, 4, 5));
+        // ... but not if it is longer than before
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> graph.getEdgeIteratorState(edge2.getEdge(), Integer.MIN_VALUE).setWayGeometry(Helper.createPointList(2, 3, 4, 5, 6, 7)));
+        assertTrue(e.getMessage().contains("This edge already has a way geometry so it cannot be changed to a bigger geometry"), e.getMessage());
+        // it's the same for edges with geometry that were copied:
+        graph.getEdgeIteratorState(edge3.getEdge(), Integer.MIN_VALUE).setWayGeometry(Helper.createPointList(6, 7, 8, 9));
+        e = assertThrows(IllegalStateException.class, () -> graph.getEdgeIteratorState(edge3.getEdge(), Integer.MIN_VALUE).setWayGeometry(Helper.createPointList(0, 1, 6, 7, 8, 9)));
+        assertTrue(e.getMessage().contains("This edge already has a way geometry so it cannot be changed to a bigger geometry"), e.getMessage());
+    }
+
+    @Test
+    public void testGeoRef() {
+        BaseGraph graph = createGHStorage();
+        BaseGraphNodesAndEdges ne = graph.getStore();
+        ne.setGeoRef(0, 123);
+        assertEquals(123, ne.getGeoRef(0));
+        ne.setGeoRef(0, -123);
+        assertEquals(-123, ne.getGeoRef(0));
+        ne.setGeoRef(0, 1L << 38);
+        assertEquals(1L << 38, ne.getGeoRef(0));
+
+        // 1000_0000 0000_0000 0000_0000 0000_0000 0000_0000
+        assertThrows(IllegalArgumentException.class, () -> ne.setGeoRef(0, 1L << 39));
+        graph.close();
+    }
+
+    // IFT3913 Test 6
+    @Test
+    public void testLoadExistingFailsWhenStoreNotInitialized() {
+        Directory dir = new RAMDirectory();
+        BaseGraph graph = new BaseGraph.Builder(encodingManager)
+                .setDir(dir)
+                .build();
+
+        // attempting to loadExisting() when no prior data exists should return false
+        boolean result = graph.loadExisting();
+
+        assertFalse(result, "Expected loadExisting() to return false when store.loadExisting() fails");
+    }
+    // IFT3913 Test 3
+    @Test
+    void testFreezeThrowsExceptions() {
+        RAMDirectory dir = new RAMDirectory();
+        BaseGraph graph = new BaseGraph.Builder(encodingManager)
+                .setDir(dir)
+                .set3D(false)
+                .setSegmentSize(1000)
+                .build();
+
+        graph.freeze();
+        assertTrue(graph.isFrozen(), "Graph should be frozen after first call to freeze()");
+
+        try {
+            graph.freeze();
+            fail("Expected IllegalStateException on second freeze() call");
+        } catch (IllegalStateException exception) {
+            assertEquals("base graph already frozen", exception.getMessage());
+        }
+    }
+    // IFT3913 Test 5
+    @Test
+    public void testGetCapacity() {
+        BaseGraph graphWithTurnCosts = new BaseGraph.Builder(encodingManager).withTurnCosts(true).create();
+        BaseGraph graphWithoutTurnCosts = new BaseGraph.Builder(encodingManager).withTurnCosts(false).create();
+
+        graphWithTurnCosts.edge(0, 1);
+        graphWithoutTurnCosts.edge(0, 1);
+
+        long capacityWith = graphWithTurnCosts.getCapacity();
+        long capacityWithout = graphWithoutTurnCosts.getCapacity();
+
+        assertTrue(capacityWith > capacityWithout);
+        assertEquals(graphWithTurnCosts.getTurnCostStorage().getCapacity(),
+                capacityWith - capacityWithout);
+    }
+
+    // IFT3913 Test 7
+    @Test
+    public void testGetAllEdges() {
+        BaseGraph graph = createGHStorage();
+        graph.edge(0, 1);
+        graph.edge(0, 2);
+        graph.edge(0, 3);
+        graph.edge(0, 4);
+        graph.edge(0, 5);
+
+        Set<Integer> expectedEdges = new HashSet<>(Arrays.asList(0, 1, 2, 3, 4));
+        Set<Integer> actualEdges = new HashSet<>();
+
+        AllEdgesIterator allEdgeIterator = graph.getAllEdges();
+        while (allEdgeIterator.next()) {
+            if (allEdgeIterator.getBaseNode() == 0 || allEdgeIterator.getAdjNode() == 0) {
+                actualEdges.add(allEdgeIterator.getEdge());
+            }
+        }
+
+        assertEquals(expectedEdges, actualEdges, "The set of edges connected to node 0 does not match the expected set");
+    }
+
+
 
 
 }

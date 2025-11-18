@@ -81,7 +81,7 @@ jobs:
           echo "score-number=$SCORE_NUMBER" >> $GITHUB_OUTPUT
 
       - name: Create Baseline File
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/master'
         run: echo "${{ steps.mutation.outputs.score-number }}" > mutation-baseline.txt
 
       - name: Compare with Previous Score
@@ -106,11 +106,11 @@ jobs:
           fi
 
       - name: Update Baseline File with Latest Score
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/master'
         run: echo "${{ steps.mutation.outputs.score-number }}" > mutation-baseline.txt
 
       - name: Save New Mutation Score
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/master'
         uses: actions/cache/save@v4
         with:
           path: mutation-baseline.txt

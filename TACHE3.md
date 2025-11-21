@@ -128,4 +128,14 @@ Ces valeurs ont été choisies pour garantir :
 - la couverture des branches principales
 - la validation des comportements normaux et anormaux
 
-## 3. Ajout des tests Mockito
+## 3. Rickroll dans CI
+
+**3.1 : déclenchement du Rickroll** <br>
+- L’étape s’exécute avec `if: always()` afin qu’elle soit évaluée même si une étape précédente a échoué.
+- Le Rickroll ne s’active que si : <br>
+→ les tests ont échoué (`steps.tests.outcome == 'failure'`) <br>
+→ la version Java est 24 (pour éviter d’exécuter le Rickroll plusieurs fois dans la matrice CI)
+
+**3.2 : ajout automatique du commentaire** <br>
+L’action réutilisable github-script permet d’appeler directement l’API GitHub REST.
+Nous utilisons `createCommitComment` pour publier automatiquement un message contenant un GIF Rickroll
